@@ -50,7 +50,7 @@ cat > "$CONTENTS_DIR/Info.plist" << 'EOF'
   <key>CFBundleVersion</key>
   <string>1</string>
   <key>LSMinimumSystemVersion</key>
-  <string>13.0</string>
+  <string>14.0</string>
   <key>NSHighResolutionCapable</key>
   <true/>
   <key>NSUserNotificationAlertStyle</key>
@@ -59,27 +59,42 @@ cat > "$CONTENTS_DIR/Info.plist" << 'EOF'
 </plist>
 EOF
 
-echo "3. Compiling native macOS binary (Swift + WKWebView + UserNotifications)..."
-swiftc -O \
+echo "3. Compiling Universal macOS binary (arm64 + x86_64)..."
+TMP_BIN_DIR="$ROOT_DIR/dist/tmp-bin"
+mkdir -p "$TMP_BIN_DIR"
+swiftc -O -target arm64-apple-macos14.0 \
   "$ROOT_DIR/macos/PomodoroApp.swift" \
-  -o "$MACOS_DIR/MinimalPomodoro" \
+  -o "$TMP_BIN_DIR/MinimalPomodoro-arm64" \
   -framework Cocoa \
   -framework WebKit \
   -framework UserNotifications
+swiftc -O -target x86_64-apple-macos14.0 \
+  "$ROOT_DIR/macos/PomodoroApp.swift" \
+  -o "$TMP_BIN_DIR/MinimalPomodoro-x86_64" \
+  -framework Cocoa \
+  -framework WebKit \
+  -framework UserNotifications
+lipo -create \
+  "$TMP_BIN_DIR/MinimalPomodoro-arm64" \
+  "$TMP_BIN_DIR/MinimalPomodoro-x86_64" \
+  -output "$MACOS_DIR/MinimalPomodoro"
+rm -rf "$TMP_BIN_DIR"
 
 echo "4. Signing macOS application bundle..."
 codesign --force --deep --sign - "$BUNDLE_DIR"
 
-echo "5. Installing to Applications..."
-if [ -w "/Applications" ]; then
-  rm -rf "/Applications/$APP_NAME.app"
-  cp -R "$BUNDLE_DIR" "/Applications/$APP_NAME.app"
-  echo "Installed to /Applications/$APP_NAME.app"
-else
-  mkdir -p "$HOME/Applications"
-  rm -rf "$HOME/Applications/$APP_NAME.app"
-  cp -R "$BUNDLE_DIR" "$HOME/Applications/$APP_NAME.app"
-  echo "Installed to $HOME/Applications/$APP_NAME.app"
+if [ "${SKIP_INSTALL:-0}" != "1" ]; then
+  echo "5. Installing to Applications..."
+  if [ -w "/Applications" ]; then
+    rm -rf "/Applications/$APP_NAME.app"
+    cp -R "$BUNDLE_DIR" "/Applications/$APP_NAME.app"
+    echo "Installed to /Applications/$APP_NAME.app"
+  else
+    mkdir -p "$HOME/Applications"
+    rm -rf "$HOME/Applications/$APP_NAME.app"
+    cp -R "$BUNDLE_DIR" "$HOME/Applications/$APP_NAME.app"
+    echo "Installed to $HOME/Applications/$APP_NAME.app"
+  fi
 fi
 
 echo "Done! Built at: $BUNDLE_DIR"
