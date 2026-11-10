@@ -3,6 +3,7 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 APP_NAME="Minimal Pomodoro"
+VERSION="${VERSION:-$(node -p "JSON.parse(require('fs').readFileSync('$ROOT_DIR/package.json', 'utf8')).version")}"
 BUNDLE_DIR="$ROOT_DIR/dist/$APP_NAME.app"
 CONTENTS_DIR="$BUNDLE_DIR/Contents"
 MACOS_DIR="$CONTENTS_DIR/MacOS"
@@ -11,7 +12,7 @@ WEB_RES_DIR="$RESOURCES_DIR/web"
 ICONSET_DIR="$ROOT_DIR/dist/AppIcon.iconset"
 WEB_ICONS_DIR="$ROOT_DIR/icons"
 
-echo "1. Generating app icons (PWA + macOS .icns)..."
+echo "1. Generating app icons (PWA + macOS .icns) for v$VERSION..."
 mkdir -p "$WEB_ICONS_DIR" "$ICONSET_DIR" "$MACOS_DIR" "$WEB_RES_DIR/src" "$WEB_RES_DIR/icons"
 swift "$ROOT_DIR/macos/GenerateIcons.swift" "$WEB_ICONS_DIR" "$ICONSET_DIR"
 iconutil -c icns "$ICONSET_DIR" -o "$RESOURCES_DIR/AppIcon.icns"
@@ -24,7 +25,7 @@ cp "$ROOT_DIR/manifest.webmanifest" "$WEB_RES_DIR/"
 cp "$ROOT_DIR/src/"*.js "$WEB_RES_DIR/src/"
 cp "$WEB_ICONS_DIR/"*.png "$WEB_RES_DIR/icons/"
 
-cat > "$CONTENTS_DIR/Info.plist" << 'EOF'
+cat > "$CONTENTS_DIR/Info.plist" << EOF
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
@@ -46,9 +47,9 @@ cat > "$CONTENTS_DIR/Info.plist" << 'EOF'
   <key>CFBundlePackageType</key>
   <string>APPL</string>
   <key>CFBundleShortVersionString</key>
-  <string>1.0.0</string>
+  <string>$VERSION</string>
   <key>CFBundleVersion</key>
-  <string>1</string>
+  <string>$VERSION</string>
   <key>LSMinimumSystemVersion</key>
   <string>14.0</string>
   <key>NSHighResolutionCapable</key>

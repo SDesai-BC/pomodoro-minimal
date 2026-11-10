@@ -1,0 +1,120 @@
+name: Release on Main
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      force_update:
+        description: 'Overwrite existing release assets if tag v<version> already exists'
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-main
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Build & Publish macOS Release
+    runs-on: macos-15
+    timeout-minutes: 20
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Check release version in package.json
+        id: check_version
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          FORCE_UPDATE: ${{ inputs.force_update || 'false' }}
+        run: |
+          VERSION=$(node -p "JSON.parse(require('fs').readFileSync('./package.json', 'utf8')).version")
+          TAG="v${VERSION}"
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+            if [ "$FORCE_UPDATE" = "true" ]; then
+              echo "should_publish=true" >> "$GITHUB_OUTPUT"
+              echo "Release $TAG already exists; force_update=true will update assets."
+            else
+              echo "should_publish=false" >> "$GITHUB_OUTPUT"
+              echo "Release $TAG is already published. Bump version in package.json on 'next' and merge to 'main' to publish a new release."
+            fi
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+            echo "should_publish=true" >> "$GITHUB_OUTPUT"
+            echo "New version detected ($TAG); proceeding with build and release."
+          fi
+
+      - name: Run unit test suite
+        if: steps.check_version.outputs.should_publish == 'true'
+        run: npm test
+
+      - name: Build Universal macOS installers (.pkg, .dmg, .zip)
+        if: steps.check_version.outputs.should_publish == 'true'
+        run: npm run package:mac
+
+      - name: Verify Universal Binary & checksums
+        if: steps.check_version.outputs.should_publish == 'true'
+        run: |
+          ARCHS=$(lipo -archs "dist/Minimal Pomodoro.app/Contents/MacOS/MinimalPomodoro")
+          echo "$ARCHS" | grep -q "arm64"
+          echo "$ARCHS" | grep -q "x86_64"
+          codesign --verify --deep --strict "dist/Minimal Pomodoro.app"
+          cd dist/release && shasum -a 256 -c SHA256SUMS.txt
+
+      - name: Publish or Update GitHub Release
+        if: steps.check_version.outputs.should_publish == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ steps.check_version.outputs.version }}
+          TAG: ${{ steps.check_version.outputs.tag }}
+          EXISTS: ${{ steps.check_version.outputs.exists }}
+        run: |
+          PKG_FILE="dist/release/Minimal-Pomodoro-${VERSION}.pkg"
+          DMG_FILE="dist/release/Minimal-Pomodoro-${VERSION}.dmg"
+          ZIP_FILE="dist/release/Minimal-Pomodoro-${VERSION}-macOS.zip"
+          SUMS_FILE="dist/release/SHA256SUMS.txt"
+
+          if [ "$EXISTS" = "true" ]; then
+            gh release upload "$TAG" \
+              "${PKG_FILE}#Minimal Pomodoro ${VERSION} Installer (macOS .pkg)" \
+              "${DMG_FILE}#Minimal Pomodoro ${VERSION} Disk Image (macOS .dmg)" \
+              "${ZIP_FILE}#Minimal Pomodoro ${VERSION} Archive (macOS .zip)" \
+              "${SUMS_FILE}#SHA-256 Checksums" \
+              --clobber
+          else
+            cat > dist/release/RELEASE_NOTES.md << EOF
+          ## Minimal Pomodoro ${TAG} (macOS Universal: Apple Silicon & Intel)
+
+          ### Download & Install
+          - **One-Click Installer (\`Minimal-Pomodoro-${VERSION}.pkg\` — Recommended)**: Download and open \`Minimal-Pomodoro-${VERSION}.pkg\` (or right-click → **Open**). Installs \`Minimal Pomodoro.app\` directly to \`/Applications\` and clears quarantine attributes automatically.
+          - **Disk Image (\`Minimal-Pomodoro-${VERSION}.dmg\`)**: Download, mount, and drag \`Minimal Pomodoro.app\` to \`Applications\`.
+          - **ZIP Archive (\`Minimal-Pomodoro-${VERSION}-macOS.zip\`)**: Direct app bundle archive created with \`ditto\`.
+          EOF
+
+            gh release create "$TAG" \
+              "${PKG_FILE}#Minimal Pomodoro ${VERSION} Installer (macOS .pkg)" \
+              "${DMG_FILE}#Minimal Pomodoro ${VERSION} Disk Image (macOS .dmg)" \
+              "${ZIP_FILE}#Minimal Pomodoro ${VERSION} Archive (macOS .zip)" \
+              "${SUMS_FILE}#SHA-256 Checksums" \
+              --target main \
+              --title "Minimal Pomodoro ${TAG} (macOS Universal)" \
+              --notes-file dist/release/RELEASE_NOTES.md \
+              --generate-notes
+          fi

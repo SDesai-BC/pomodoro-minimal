@@ -1,0 +1,55 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - next
+      - main
+  pull_request:
+    branches:
+      - next
+      - main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  verify:
+    name: Test & Build Universal macOS App
+    runs-on: macos-15
+    timeout-minutes: 15
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Check JavaScript syntax
+        run: |
+          node --check src/app.js
+          node --check src/storage.js
+          node --check src/timer-engine.js
+          node --check src/sound.js
+          node --check src/notifications.js
+
+      - name: Run unit tests
+        run: npm test
+
+      - name: Build Universal macOS packages (.dmg, .pkg, .zip)
+        run: npm run package:mac
+
+      - name: Verify Universal Binary, code signature & SHA-256 checksums
+        run: |
+          ARCHS=$(lipo -archs "dist/Minimal Pomodoro.app/Contents/MacOS/MinimalPomodoro")
+          echo "Built architectures: $ARCHS"
+          echo "$ARCHS" | grep -q "arm64"
+          echo "$ARCHS" | grep -q "x86_64"
+          codesign --verify --deep --strict "dist/Minimal Pomodoro.app"
+          cd dist/release && shasum -a 256 -c SHA256SUMS.txt

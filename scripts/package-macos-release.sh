@@ -3,7 +3,7 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 APP_NAME="Minimal Pomodoro"
-VERSION="1.0.0"
+VERSION="${VERSION:-$(node -p "JSON.parse(require('fs').readFileSync('$ROOT_DIR/package.json', 'utf8')).version")}"
 BUNDLE_ID="com.pomodoro.minimal"
 APP_BUNDLE="$ROOT_DIR/dist/$APP_NAME.app"
 RELEASE_DIR="$ROOT_DIR/dist/release"
@@ -12,8 +12,8 @@ DMG_NAME="Minimal-Pomodoro-$VERSION.dmg"
 PKG_NAME="Minimal-Pomodoro-$VERSION.pkg"
 ZIP_NAME="Minimal-Pomodoro-$VERSION-macOS.zip"
 
-echo "==> Step 1: Building Universal macOS App Bundle..."
-SKIP_INSTALL=1 zsh "$ROOT_DIR/scripts/build-macos-app.sh"
+echo "==> Step 1: Building Universal macOS App Bundle (v$VERSION)..."
+VERSION="$VERSION" SKIP_INSTALL=1 zsh "$ROOT_DIR/scripts/build-macos-app.sh"
 
 rm -rf "$RELEASE_DIR"
 mkdir -p "$RELEASE_DIR"

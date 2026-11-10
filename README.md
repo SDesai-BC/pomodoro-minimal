@@ -27,6 +27,11 @@ Download the latest release from [**GitHub Releases**](https://github.com/SDesai
 - **Compact Permanent Storage (`pomodoro_minimal_v1`)**: Stores settings, timer state, tasks, and never-expiring daily focus history in `< 500 bytes` of JSON, mirrored to macOS `UserDefaults` in the native app.
 - **Native macOS App & Menu Bar Integration**: Compiles into `Minimal Pomodoro.app` (Universal Binary: `arm64` + `x86_64`) with a live `NSStatusItem` menu bar countdown and a floating top-right HUD notification banner.
 
+## Branching & Automated Release Workflow (`next` → `main`)
+
+- **`next` (Default Branch)**: All daily development happens by creating feature/fix branches (`feat/*`, `fix/*`) from `next` and opening pull requests targeting `next`. Every PR and push runs the [`CI` workflow](.github/workflows/ci.yml) (syntax check, unit tests, Universal Binary `.dmg`/`.pkg`/`.zip` build, and signature verification).
+- **`main` (Production Release Branch)**: To cut a new release, bump `"version"` in `package.json` on `next` (e.g. `npm version minor --no-git-tag-version`) and merge a PR from `next` into `main`. Pushing to `main` triggers the [`Release on Main` workflow](.github/workflows/release.yml), which automatically builds the Universal macOS `.pkg`, `.dmg`, `.zip`, and `SHA256SUMS.txt` artifacts and publishes tag `v<version>` on GitHub Releases.
+
 ## Quick Start (Development)
 
 ### Run Unit Tests
@@ -55,3 +60,4 @@ npm start
 - [Pomodoro Mechanics, Proportional Break Scaling & Storage Architecture](docs/research/pomodoro-mechanics.md)
 - [Focus Timer Acoustics, Psychoacoustics & Web Audio Synthesis](docs/research/timer-acoustics.md)
 - [macOS Application Packaging, Universal Binaries, Gatekeeper & Distribution](docs/research/macos-packaging.md)
+- [CI/CD, `next` → `main` Release Branching & Supply-Chain Best Practices](docs/research/ci-cd-branching-release.md)
