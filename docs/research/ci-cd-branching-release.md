@@ -126,7 +126,7 @@ git checkout -b feat/my-improvement
 
 # 3. Run the test suite and native macOS build locally
 npm test
-npm run build:macos
+npm run build:mac
 
 # 4. Commit, push, and open a PR (automatically targets `next`)
 git push -u origin feat/my-improvement
