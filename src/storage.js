@@ -1,7 +1,7 @@
 /**
- * Compact, versioned localStorage persistence module for Kanso Pomodoro.
+ * Compact, versioned localStorage persistence module for Minimal Pomodoro.
  *
- * Uses compact single-key JSON serialization ("kanso_pomodoro_v1") with
+ * Uses compact single-key JSON serialization ("pomodoro_minimal_v1") with
  * permanent, never-expiring retention mirrored to macOS UserDefaults.
  */
 
@@ -16,7 +16,7 @@ import {
   isValidSoundProfile,
 } from './sound.js';
 
-export const STORAGE_KEY = 'kanso_pomodoro_v1';
+export const STORAGE_KEY = 'pomodoro_minimal_v1';
 export const SCHEMA_VERSION = 1;
 export const MAX_STREAK_SCAN_DAYS = 3650;
 export const MAX_TASKS = 50;
@@ -282,7 +282,7 @@ export function createPomodoroStore({
     const serialized = JSON.stringify(compact);
     try {
       storage.setItem(STORAGE_KEY, serialized);
-      const nativeBridge = globalThis.webkit?.messageHandlers?.kansoNative;
+      const nativeBridge = globalThis.webkit?.messageHandlers?.pomodoroNative;
       if (nativeBridge && typeof nativeBridge.postMessage === 'function') {
         nativeBridge.postMessage({ type: 'persistState', serialized });
       }

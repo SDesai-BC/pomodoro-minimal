@@ -1,6 +1,6 @@
 import Cocoa
 
-func renderKansoIcon(size: Int, outputPath: String) throws {
+func renderPomodoroIcon(size: Int, outputPath: String) throws {
     let rep = NSBitmapImageRep(
         bitmapDataPlanes: nil,
         pixelsWide: size,
@@ -67,8 +67,8 @@ guard args.count >= 3 else {
 let webIconsDir = args[1]
 let iconsetDir = args[2]
 
-try renderKansoIcon(size: 192, outputPath: "\(webIconsDir)/app-192.png")
-try renderKansoIcon(size: 512, outputPath: "\(webIconsDir)/app-512.png")
+try renderPomodoroIcon(size: 192, outputPath: "\(webIconsDir)/app-192.png")
+try renderPomodoroIcon(size: 512, outputPath: "\(webIconsDir)/app-512.png")
 
 let iconSpecs: [(String, Int)] = [
     ("icon_16x16.png", 16),
@@ -84,5 +84,5 @@ let iconSpecs: [(String, Int)] = [
 ]
 
 for (filename, px) in iconSpecs {
-    try renderKansoIcon(size: px, outputPath: "\(iconsetDir)/\(filename)")
+    try renderPomodoroIcon(size: px, outputPath: "\(iconsetDir)/\(filename)")
 }

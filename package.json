@@ -7,6 +7,6 @@
     "test": "node --test tests/*.test.js",
     "start": "npx serve .",
     "build:mac": "zsh scripts/build-macos-app.sh",
-    "open:mac": "open \"/Applications/Kanso Pomodoro.app\" || open \"$HOME/Applications/Kanso Pomodoro.app\" || open \"dist/Kanso Pomodoro.app\""
+    "open:mac": "open \"/Applications/Minimal Pomodoro.app\" || open \"$HOME/Applications/Minimal Pomodoro.app\" || open \"dist/Minimal Pomodoro.app\""
   }
 }

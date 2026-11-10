@@ -1,5 +1,5 @@
 /**
- * UI Controller & Accessibility Orchestrator for Kanso Pomodoro.
+ * UI Controller & Accessibility Orchestrator for Minimal Pomodoro.
  */
 
 import {
@@ -228,7 +228,7 @@ function initApp() {
   siteHeader?.addEventListener('mousedown', (event) => {
     if (event.button !== 0) return;
     if (event.target.closest('button, input, a, label, select, textarea')) return;
-    window.webkit?.messageHandlers?.kansoNative?.postMessage({ type: 'startWindowDrag' });
+    window.webkit?.messageHandlers?.pomodoroNative?.postMessage({ type: 'startWindowDrag' });
   });
 
   let tickTimerId = null;
@@ -327,7 +327,7 @@ function initApp() {
     }
 
     const runningPrefix = state.timer.isRunning ? '' : 'Paused · ';
-    document.title = `${formatted} — ${runningPrefix}${meta.shortLabel} | Kanso Pomodoro`;
+    document.title = `${formatted} — ${runningPrefix}${meta.shortLabel} | Minimal Pomodoro`;
 
     syncMacMenuBarTimer({
       formattedTime: formatted,

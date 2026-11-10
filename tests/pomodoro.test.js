@@ -216,7 +216,7 @@ describe('PomodoroStore (compact localStorage deep module)', () => {
     });
 
     assert.equal(errors.length, 1);
-    assert.match(errors[0].message, /Corrupted state in localStorage key "kanso_pomodoro_v1"/);
+    assert.match(errors[0].message, /Corrupted state in localStorage key "pomodoro_minimal_v1"/);
     assert.deepEqual(store.getState().settings, DEFAULT_SETTINGS);
   });
 

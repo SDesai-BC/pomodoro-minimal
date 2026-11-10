@@ -1,9 +1,9 @@
 /**
- * Desktop & macOS Native Notification module for Kanso Pomodoro.
+ * Desktop & macOS Native Notification module for Minimal Pomodoro.
  *
  * Routes notifications and live menu-bar countdown updates to the native
- * macOS WKScriptMessageHandler (`window.webkit.messageHandlers.kansoNative`)
- * when running inside `Kanso Pomodoro.app`, or falls back to the standard
+ * macOS WKScriptMessageHandler (`window.webkit.messageHandlers.pomodoroNative`)
+ * when running inside `Minimal Pomodoro.app`, or falls back to the standard
  * Web Notification API in browsers/PWAs.
  */
 
@@ -13,7 +13,7 @@ function resolveNativeBridge(overrideBridge = null) {
   if (overrideBridge && typeof overrideBridge.postMessage === 'function') {
     return overrideBridge;
   }
-  const handler = globalThis.webkit?.messageHandlers?.kansoNative;
+  const handler = globalThis.webkit?.messageHandlers?.pomodoroNative;
   if (handler && typeof handler.postMessage === 'function') {
     return handler;
   }
@@ -159,7 +159,7 @@ export async function sendPhaseNotification(
 
     const notification = new globalThis.Notification(title, {
       body,
-      tag: 'kanso-pomodoro-phase',
+      tag: 'minimal-pomodoro-phase',
       renotify: true,
       silent: Boolean(silent),
     });

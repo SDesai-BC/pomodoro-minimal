@@ -12,7 +12,7 @@ final class BundleSchemeHandler: NSObject, WKURLSchemeHandler {
 
     func webView(_ webView: WKWebView, start urlSchemeTask: WKURLSchemeTask) {
         guard let requestURL = urlSchemeTask.request.url else {
-            urlSchemeTask.didFailWithError(NSError(domain: "KansoSchemeError", code: 400, userInfo: [
+            urlSchemeTask.didFailWithError(NSError(domain: "PomodoroSchemeError", code: 400, userInfo: [
                 NSLocalizedDescriptionKey: "Missing URL in scheme task request"
             ]))
             return
@@ -26,7 +26,7 @@ final class BundleSchemeHandler: NSObject, WKURLSchemeHandler {
         let targetURL = webRootURL.appendingPathComponent(cleanRelative).standardizedFileURL
 
         guard targetURL.path.hasPrefix(webRootURL.standardizedFileURL.path) else {
-            urlSchemeTask.didFailWithError(NSError(domain: "KansoSchemeError", code: 403, userInfo: [
+            urlSchemeTask.didFailWithError(NSError(domain: "PomodoroSchemeError", code: 403, userInfo: [
                 NSLocalizedDescriptionKey: "Forbidden path outside web root: \(cleanRelative)"
             ]))
             return
@@ -76,7 +76,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKScriptMessageHandler
     private var statusItem: NSStatusItem!
     private var bannerPanel: NSPanel?
     private var bannerDismissWorkItem: DispatchWorkItem?
-    private let persistentStorageKey = "kanso_pomodoro_v1"
+    private let persistentStorageKey = "pomodoro_minimal_v1"
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         setupMainMenu()
@@ -104,7 +104,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKScriptMessageHandler
             button.title = "○ 25:00"
             button.target = self
             button.action = #selector(toggleMainWindow)
-            button.toolTip = "Kanso Pomodoro — Click to show or hide window"
+            button.toolTip = "Minimal Pomodoro — Click to show or hide window"
         }
     }
 
@@ -123,22 +123,22 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKScriptMessageHandler
         center.delegate = self
         center.requestAuthorization(options: [.alert, .sound, .badge]) { granted, error in
             if let error = error {
-                NSLog("[Kanso Pomodoro] Notification permission error: \(error.localizedDescription)")
+                NSLog("[Minimal Pomodoro] Notification permission error: \(error.localizedDescription)")
             }
         }
     }
 
     private func setupMainWindow() {
         guard let resourceURL = Bundle.main.resourceURL else {
-            fatalError("[Kanso Pomodoro] Missing Bundle.main.resourceURL")
+            fatalError("[Minimal Pomodoro] Missing Bundle.main.resourceURL")
         }
         let webRootURL = resourceURL.appendingPathComponent("web", isDirectory: true)
 
         let config = WKWebViewConfiguration()
         config.websiteDataStore = .default()
         let schemeHandler = BundleSchemeHandler(webRootURL: webRootURL)
-        config.setURLSchemeHandler(schemeHandler, forURLScheme: "kanso")
-        config.userContentController.add(self, name: "kansoNative")
+        config.setURLSchemeHandler(schemeHandler, forURLScheme: "pomodoro")
+        config.userContentController.add(self, name: "pomodoroNative")
 
         // Restore permanent backup from UserDefaults if WebKit localStorage is ever empty
         if let backedUpJSON = UserDefaults.standard.string(forKey: persistentStorageKey),
@@ -147,11 +147,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKScriptMessageHandler
             let restoreScript = """
             try {
               const backup = (\(jsonArrayString))[0];
-              if (backup && !localStorage.getItem("kanso_pomodoro_v1")) {
-                localStorage.setItem("kanso_pomodoro_v1", backup);
+              if (backup && !localStorage.getItem("pomodoro_minimal_v1")) {
+                localStorage.setItem("pomodoro_minimal_v1", backup);
               }
             } catch (err) {
-              console.warn("[Kanso native restore] Failed to restore backup:", err);
+              console.warn("[Pomodoro native restore] Failed to restore backup:", err);
             }
             """
             let userScript = WKUserScript(
@@ -170,12 +170,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKScriptMessageHandler
             backing: .buffered,
             defer: false
         )
-        window.title = "Kanso Pomodoro"
+        window.title = "Minimal Pomodoro"
         window.titlebarAppearsTransparent = true
         window.isMovableByWindowBackground = true
         window.minSize = NSSize(width: 460, height: 600)
         window.center()
-        window.setFrameAutosaveName("KansoPomodoroMainWindow")
+        window.setFrameAutosaveName("MinimalPomodoroMainWindow")
         window.delegate = self
 
         webView = WKWebView(frame: rect, configuration: config)
@@ -183,14 +183,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKScriptMessageHandler
         webView.setValue(false, forKey: "drawsBackground")
         window.contentView = webView
 
-        if let startURL = URL(string: "kanso://app/index.html") {
+        if let startURL = URL(string: "pomodoro://app/index.html") {
             webView.load(URLRequest(url: startURL))
         }
         window.makeKeyAndOrderFront(nil)
     }
 
     func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
-        guard message.name == "kansoNative",
+        guard message.name == "pomodoroNative",
               let payload = message.body as? [String: Any],
               let type = payload["type"] as? String else {
             return
@@ -208,7 +208,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKScriptMessageHandler
         case "requestPermission":
             self.configureNotifications()
         case "notify":
-            let title = payload["title"] as? String ?? "Kanso Pomodoro"
+            let title = payload["title"] as? String ?? "Minimal Pomodoro"
             let body = payload["body"] as? String ?? ""
             let silent = payload["silent"] as? Bool ?? false
             self.deliverNativeNotification(title: title, body: body, silent: silent)
@@ -237,7 +237,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKScriptMessageHandler
             content.sound = nil
 
             let request = UNNotificationRequest(
-                identifier: "kanso-phase-\(UUID().uuidString)",
+                identifier: "pomodoro-phase-\(UUID().uuidString)",
                 content: content,
                 trigger: nil
             )
@@ -352,10 +352,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKScriptMessageHandler
         let appMenuItem = NSMenuItem()
         mainMenu.addItem(appMenuItem)
         let appMenu = NSMenu()
-        appMenu.addItem(withTitle: "About Kanso Pomodoro", action: #selector(NSApplication.orderFrontStandardAboutPanel(_:)), keyEquivalent: "")
+        appMenu.addItem(withTitle: "About Minimal Pomodoro", action: #selector(NSApplication.orderFrontStandardAboutPanel(_:)), keyEquivalent: "")
         appMenu.addItem(NSMenuItem.separator())
-        appMenu.addItem(withTitle: "Hide Kanso Pomodoro", action: #selector(NSApplication.hide(_:)), keyEquivalent: "h")
-        appMenu.addItem(withTitle: "Quit Kanso Pomodoro", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
+        appMenu.addItem(withTitle: "Hide Minimal Pomodoro", action: #selector(NSApplication.hide(_:)), keyEquivalent: "h")
+        appMenu.addItem(withTitle: "Quit Minimal Pomodoro", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
         appMenuItem.submenu = appMenu
 
         let editMenuItem = NSMenuItem()

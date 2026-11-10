@@ -1,5 +1,5 @@
 /**
- * Multi-Profile Web Audio API Acoustic Synthesizer for Kanso Pomodoro.
+ * Multi-Profile Web Audio API Acoustic Synthesizer for Minimal Pomodoro.
  *
  * Implements 5 psychoacoustically tuned completion sound profiles plus a
  * strict "none" (Silent) profile. All oscillator and gain nodes are

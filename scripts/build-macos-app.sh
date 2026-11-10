@@ -2,7 +2,7 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
-APP_NAME="Kanso Pomodoro"
+APP_NAME="Minimal Pomodoro"
 BUNDLE_DIR="$ROOT_DIR/dist/$APP_NAME.app"
 CONTENTS_DIR="$BUNDLE_DIR/Contents"
 MACOS_DIR="$CONTENTS_DIR/MacOS"
@@ -32,17 +32,17 @@ cat > "$CONTENTS_DIR/Info.plist" << 'EOF'
   <key>CFBundleDevelopmentRegion</key>
   <string>en</string>
   <key>CFBundleDisplayName</key>
-  <string>Kanso Pomodoro</string>
+  <string>Minimal Pomodoro</string>
   <key>CFBundleExecutable</key>
-  <string>KansoPomodoro</string>
+  <string>MinimalPomodoro</string>
   <key>CFBundleIconFile</key>
   <string>AppIcon</string>
   <key>CFBundleIdentifier</key>
-  <string>com.kanso.pomodoro</string>
+  <string>com.pomodoro.minimal</string>
   <key>CFBundleInfoDictionaryVersion</key>
   <string>6.0</string>
   <key>CFBundleName</key>
-  <string>Kanso Pomodoro</string>
+  <string>Minimal Pomodoro</string>
   <key>CFBundlePackageType</key>
   <string>APPL</string>
   <key>CFBundleShortVersionString</key>
@@ -61,8 +61,8 @@ EOF
 
 echo "3. Compiling native macOS binary (Swift + WKWebView + UserNotifications)..."
 swiftc -O \
-  "$ROOT_DIR/macos/KansoApp.swift" \
-  -o "$MACOS_DIR/KansoPomodoro" \
+  "$ROOT_DIR/macos/PomodoroApp.swift" \
+  -o "$MACOS_DIR/MinimalPomodoro" \
   -framework Cocoa \
   -framework WebKit \
   -framework UserNotifications
