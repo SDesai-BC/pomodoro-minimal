@@ -57,6 +57,8 @@ npm start
 
 ## Research & Architecture Documentation
 
+- [AI Agent & Engineering Guidelines (`AGENT.md`)](AGENT.md)
+- [Best Practices for `AGENT.md` & AI-Augmented Software Design](docs/research/agent-md-best-practices.md)
 - [Pomodoro Mechanics, Proportional Break Scaling & Storage Architecture](docs/research/pomodoro-mechanics.md)
 - [Focus Timer Acoustics, Psychoacoustics & Web Audio Synthesis](docs/research/timer-acoustics.md)
 - [macOS Application Packaging, Universal Binaries, Gatekeeper & Distribution](docs/research/macos-packaging.md)
