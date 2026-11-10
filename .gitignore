@@ -1,0 +1,26 @@
+# Build outputs & native app bundles
+dist/
+*.app/
+*.icns
+*.iconset/
+
+# Dependencies
+node_modules/
+
+# OS & Editor files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Environment & credentials
+.env
+.env.*
+*.pem
+*.key
+*.p12
+*.mobileprovision
+
+# AI / Agent directories
+.claude/
+.gemini/

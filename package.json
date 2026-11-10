@@ -1,0 +1,12 @@
+{
+  "name": "pomodoro-minimal",
+  "version": "1.0.0",
+  "description": "Modern minimalist Pomodoro focus application with compact localStorage persistence",
+  "type": "module",
+  "scripts": {
+    "test": "node --test tests/*.test.js",
+    "start": "npx serve .",
+    "build:mac": "zsh scripts/build-macos-app.sh",
+    "open:mac": "open \"/Applications/Kanso Pomodoro.app\" || open \"$HOME/Applications/Kanso Pomodoro.app\" || open \"dist/Kanso Pomodoro.app\""
+  }
+}

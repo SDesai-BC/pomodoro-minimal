@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light dark">
+  <script>
+    try {
+      const savedScheme = localStorage.getItem("color-scheme");
+      if (savedScheme === "light" || savedScheme === "dark") {
+        document.querySelector('meta[name="color-scheme"]').content = savedScheme;
+      }
+    } catch (err) {
+      console.warn("[color-scheme init] Unable to read localStorage preference:", err);
+    }
+  </script>
+  <title>25:00 — Focus | Kanso Pomodoro</title>
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" type="image/png" href="./icons/app-192.png">
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body data-phase="focus">
+  <a href="#main-title" class="skip-link visually-hidden">Skip to focus timer</a>
+
+  <div id="live-announcer" class="visually-hidden" aria-live="polite" aria-atomic="true"></div>
+
+  <header class="site-header">
+    <div class="brand">
+      <span class="brand-mark" aria-hidden="true"></span>
+      <h1 id="main-title" tabindex="-1" class="brand-title">Kanso</h1>
+      <span class="brand-tag">Pomodoro</span>
+    </div>
+
+    <nav class="header-actions" aria-label="Application controls">
+      <button
+        type="button"
+        id="theme-quick-btn"
+        class="icon-btn"
+        aria-label="Toggle color theme"
+      >
+        <svg class="icon-sun" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="4"></circle>
+          <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"></path>
+        </svg>
+        <svg class="icon-moon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path>
+        </svg>
+      </button>
+
+      <button
+        type="button"
+        id="open-settings-btn"
+        class="icon-btn"
+        aria-label="Open timer settings"
+      >
+        <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path>
+          <circle cx="12" cy="12" r="3"></circle>
+        </svg>
+        <span class="btn-label">Settings</span>
+      </button>
+    </nav>
+  </header>
+
+  <div class="workspace-grid">
+    <main class="focus-column">
+      <!-- Phase Switcher -->
+      <section class="timer-card" aria-labelledby="phase-status-label">
+        <div class="phase-tabs" role="group" aria-label="Pomodoro timer modes">
+          <button
+            type="button"
+            class="phase-tab"
+            data-phase-select="focus"
+            aria-pressed="true"
+          >
+            <span class="phase-dot" aria-hidden="true"></span>
+            <span data-phase-label="focus">Focus · 25m</span>
+          </button>
+          <button
+            type="button"
+            class="phase-tab"
+            data-phase-select="shortBreak"
+            aria-pressed="false"
+          >
+            <span class="phase-dot" aria-hidden="true"></span>
+            <span data-phase-label="shortBreak">Short · 5m</span>
+          </button>
+          <button
+            type="button"
+            class="phase-tab"
+            data-phase-select="longBreak"
+            aria-pressed="false"
+          >
+            <span class="phase-dot" aria-hidden="true"></span>
+            <span data-phase-label="longBreak">Long · 15m</span>
+          </button>
+        </div>
+
+        <!-- Circular Minimalist Dial -->
+        <div class="dial-wrapper" id="dial-wrapper" style="--progress: 0;">
+          <svg class="dial-svg" viewBox="0 0 280 280" aria-hidden="true">
+            <circle class="dial-ticks" cx="140" cy="140" r="111" pathLength="60"></circle>
+            <circle class="dial-track" cx="140" cy="140" r="124"></circle>
+            <circle class="dial-progress" cx="140" cy="140" r="124" pathLength="1000"></circle>
+          </svg>
+
+          <div class="dial-center">
+            <p id="phase-status-label" class="phase-subtitle">Single-task deep work interval</p>
+            <output
+              id="timer-display"
+              class="timer-readout"
+              aria-live="off"
+              aria-label="Remaining time"
+            >25:00</output>
+
+            <div class="cycle-indicators" id="cycle-indicators" aria-label="Completed focus intervals in current cycle"></div>
+          </div>
+        </div>
+
+        <!-- Bottom-of-Circle Duration Adjuster: Left (-5 min), Center Editable Input (25 default), Right (+5 min) -->
+        <div class="duration-adjuster-bar" role="group" aria-label="Adjust timer duration in minutes">
+          <button
+            type="button"
+            id="decrease-time-btn"
+            class="duration-step-btn"
+            aria-label="Decrease duration by 5 minutes (Shortcut: -)"
+          >
+            − 5 min
+          </button>
+
+          <label class="duration-input-pill" for="custom-duration-input">
+            <span class="visually-hidden">Timer duration in minutes</span>
+            <input
+              type="text"
+              id="custom-duration-input"
+              class="duration-direct-input"
+              value="25"
+              inputmode="numeric"
+              pattern="[0-9]*"
+              maxlength="3"
+              autocomplete="off"
+              spellcheck="false"
+            >
+          </label>
+
+          <button
+            type="button"
+            id="extend-time-btn"
+            class="duration-step-btn"
+            aria-label="Increase duration by 5 minutes (Shortcut: +)"
+          >
+            + 5 min
+          </button>
+        </div>
+
+        <!-- Active Task Banner inside Timer Card -->
+        <div class="active-intent-bar" id="active-intent-bar">
+          <span class="intent-kicker" id="active-intent-kicker">Current Intent</span>
+          <span class="intent-title" id="active-intent-title">Unassigned focus session</span>
+        </div>
+
+        <!-- Primary Controls -->
+        <div class="timer-controls">
+          <button
+            type="button"
+            id="reset-timer-btn"
+            class="secondary-btn"
+            aria-label="Reset current timer (Shortcut: R)"
+          >
+            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
+              <path d="M3 3v5h5"></path>
+            </svg>
+            <span>Reset</span>
+          </button>
+
+          <button
+            type="button"
+            id="toggle-timer-btn"
+            class="primary-btn"
+            aria-label="Start focus timer (Shortcut: Space)"
+          >
+            <span id="toggle-timer-text">Start</span>
+            <kbd class="key-hint" aria-hidden="true">Space</kbd>
+          </button>
+
+          <button
+            type="button"
+            id="skip-phase-btn"
+            class="secondary-btn"
+            aria-label="Complete and advance to next phase (Shortcut: S)"
+          >
+            <span>Next</span>
+            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <polygon points="5 4 15 12 5 20 5 4"></polygon>
+              <line x1="19" y1="5" x2="19" y2="19"></line>
+            </svg>
+          </button>
+        </div>
+      </section>
+
+      <!-- Minimalist Task Queue -->
+      <section class="tasks-card" aria-labelledby="tasks-heading">
+        <div class="section-header">
+          <div>
+            <h2 id="tasks-heading" class="section-title">Focus Queue</h2>
+            <p class="section-caption" id="tasks-summary-caption">0 tasks · 0 est. pomodoros</p>
+          </div>
+          <button
+            type="button"
+            id="clear-completed-btn"
+            class="ghost-btn"
+            hidden
+          >
+            Clear done
+          </button>
+        </div>
+
+        <form id="add-task-form" class="task-form" novalidate>
+          <div class="task-input-group">
+            <label for="task-title-input" class="visually-hidden">Task description</label>
+            <input
+              type="text"
+              id="task-title-input"
+              class="task-input"
+              placeholder="What are you focusing on? (Press N)"
+              maxlength="120"
+              required
+            >
+          </div>
+
+          <div class="task-est-group">
+            <label for="task-est-input" class="est-label">Pomos</label>
+            <input
+              type="number"
+              id="task-est-input"
+              class="est-input"
+              min="1"
+              max="20"
+              value="1"
+              required
+            >
+          </div>
+
+          <button type="submit" class="add-task-btn">Add</button>
+        </form>
+        <p id="task-form-error" class="form-error" role="alert" hidden></p>
+
+        <ul id="task-list" class="task-list" role="list"></ul>
+      </section>
+    </main>
+
+    <!-- Insights & LocalStorage Footprint Sidebar -->
+    <aside class="insights-column" aria-labelledby="stats-heading">
+      <section class="stats-card">
+        <div class="stats-card-header">
+          <h2 id="stats-heading" class="section-title">Daily Rhythm</h2>
+          <span id="streak-badge" class="streak-badge">0-day streak</span>
+        </div>
+
+        <div class="metrics-grid">
+          <div class="metric-tile">
+            <span class="metric-label">Today's Focus</span>
+            <strong class="metric-value" id="stat-today-minutes">0m</strong>
+            <span class="metric-sub" id="stat-today-sessions">0 sessions</span>
+          </div>
+
+          <div class="metric-tile">
+            <span class="metric-label">7-Day Total</span>
+            <strong class="metric-value" id="stat-week-minutes">0m</strong>
+            <span class="metric-sub" id="stat-week-sessions">0 sessions</span>
+          </div>
+        </div>
+
+        <div class="chart-block">
+          <div class="chart-header">
+            <span class="chart-title">Last 7 Days</span>
+            <span class="chart-legend" id="chart-peak-label">Minutes focused</span>
+          </div>
+          <div class="week-bars" id="week-bars" role="img" aria-label="Bar chart of focus minutes over the last 7 days"></div>
+        </div>
+
+        <div class="storage-meter">
+          <div class="storage-row">
+            <span class="storage-label">Permanent Local Cache</span>
+            <code class="storage-bytes" id="storage-bytes-label">0 B</code>
+          </div>
+          <p class="storage-note">
+            <strong>Never expires.</strong> Stores your custom timer &amp; break ratios (e.g. 50/10/30), active countdown, task queue, and lifetime daily focus history locally on this Mac.
+          </p>
+        </div>
+
+        <div class="shortcuts-block">
+          <h3 class="shortcuts-title">Keyboard Shortcuts</h3>
+          <dl class="shortcuts-list">
+            <div class="shortcut-row">
+              <dt><kbd>Space</kbd></dt>
+              <dd>Start or pause timer</dd>
+            </div>
+            <div class="shortcut-row">
+              <dt><kbd>R</kbd></dt>
+              <dd>Reset phase</dd>
+            </div>
+            <div class="shortcut-row">
+              <dt><kbd>S</kbd></dt>
+              <dd>Skip to next phase</dd>
+            </div>
+            <div class="shortcut-row">
+              <dt><kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd></dt>
+              <dd>Switch Focus / Short / Long</dd>
+            </div>
+            <div class="shortcut-row">
+              <dt><kbd>N</kbd></dt>
+              <dd>New task input</dd>
+            </div>
+          </dl>
+        </div>
+      </section>
+    </aside>
+  </div>
+
+  <footer class="site-footer">
+    <p>Designed with Swiss typographic minimalism &amp; drift-free wall-clock precision.</p>
+  </footer>
+
+  <!-- Native Modal Dialog with declarative light-dismiss (closedby="any") -->
+  <dialog id="settings-dialog" closedby="any" aria-labelledby="settings-title">
+    <form id="settings-form" method="dialog" class="dialog-surface">
+      <header class="dialog-header">
+        <h2 id="settings-title" class="dialog-title">Timer &amp; Preferences</h2>
+        <button
+          type="button"
+          id="close-settings-btn"
+          class="icon-btn"
+          aria-label="Close settings"
+        >
+          <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+            <path d="M18 6 6 18M6 6l12 12"></path>
+          </svg>
+        </button>
+      </header>
+
+      <div class="dialog-body">
+        <fieldset class="settings-fieldset">
+          <legend class="fieldset-legend">Durations (minutes)</legend>
+          <div class="duration-inputs">
+            <div class="field-cell">
+              <label for="set-focus-min">Focus</label>
+              <input type="number" id="set-focus-min" min="1" max="180" required autofocus>
+            </div>
+            <div class="field-cell">
+              <label for="set-short-min">Short Break</label>
+              <input type="number" id="set-short-min" min="1" max="60" required>
+            </div>
+            <div class="field-cell">
+              <label for="set-long-min">Long Break</label>
+              <input type="number" id="set-long-min" min="1" max="90" required>
+            </div>
+          </div>
+          <div class="settings-row proportional-row">
+            <label for="set-proportional">Auto-scale breaks (1:5 short, 3:5 long)</label>
+            <input type="checkbox" id="set-proportional" class="native-checkbox" checked>
+          </div>
+        </fieldset>
+
+        <div class="settings-row">
+          <label for="set-interval">Long break interval (pomodoros)</label>
+          <input type="number" id="set-interval" class="compact-num-input" min="1" max="12" required>
+        </div>
+
+        <div class="settings-row">
+          <label for="set-auto-breaks">Auto-start breaks</label>
+          <input type="checkbox" id="set-auto-breaks" class="native-checkbox">
+        </div>
+
+        <div class="settings-row">
+          <label for="set-auto-focus">Auto-start focus sessions</label>
+          <input type="checkbox" id="set-auto-focus" class="native-checkbox">
+        </div>
+
+        <div class="settings-row">
+          <div class="settings-label-stack">
+            <label for="set-sound-profile">Completion sound</label>
+            <button type="button" id="preview-sound-btn" class="inline-action-btn">
+              Preview sound
+            </button>
+          </div>
+          <select id="set-sound-profile" class="sound-select">
+            <option value="singing-bowl">Tibetan Singing Bowl</option>
+            <option value="zen-bell">Zen Temple Bell</option>
+            <option value="marimba">Warm Wooden Marimba</option>
+            <option value="crystal-chime">Crystal Wind Chime</option>
+            <option value="soft-pulse">Soft Double-Pulse</option>
+            <option value="none">No Sound (Silent)</option>
+          </select>
+        </div>
+
+        <div class="settings-row">
+          <div class="settings-label-stack">
+            <label for="set-notifications">macOS / Desktop notifications</label>
+            <button type="button" id="test-notification-btn" class="inline-action-btn">
+              Send test alert
+            </button>
+          </div>
+          <input type="checkbox" id="set-notifications" class="native-checkbox" checked>
+        </div>
+
+        <fieldset class="settings-fieldset">
+          <legend class="fieldset-legend">Color Scheme</legend>
+          <div class="theme-segmented" role="radiogroup" aria-label="Color scheme preference">
+            <label class="segment-option">
+              <input type="radio" name="theme-choice" value="system">
+              <span id="theme-system-label">System</span>
+            </label>
+            <label class="segment-option">
+              <input type="radio" name="theme-choice" value="light">
+              <span>Light</span>
+            </label>
+            <label class="segment-option">
+              <input type="radio" name="theme-choice" value="dark">
+              <span>Dark</span>
+            </label>
+          </div>
+        </fieldset>
+
+        <p id="settings-error" class="form-error" role="alert" hidden></p>
+      </div>
+
+      <footer class="dialog-footer">
+        <button type="button" id="cancel-settings-btn" class="secondary-btn">Cancel</button>
+        <button type="submit" value="save" class="primary-btn">Save Changes</button>
+      </footer>
+    </form>
+  </dialog>
+
+  <!-- Active Timer Warning & Confirmation Dialog -->
+  <dialog id="confirm-timer-dialog" closedby="any" aria-labelledby="confirm-timer-title">
+    <div class="dialog-surface confirm-dialog-surface">
+      <header class="dialog-header">
+        <h2 id="confirm-timer-title" class="dialog-title">Restart Active Timer?</h2>
+      </header>
+      <div class="dialog-body">
+        <p id="confirm-timer-message" class="confirm-dialog-message">
+          Your timer is currently running. Changing the duration will restart the active countdown.
+        </p>
+      </div>
+      <footer class="dialog-footer">
+        <button type="button" id="confirm-timer-cancel-btn" class="secondary-btn">Keep Current Timer</button>
+        <button type="button" id="confirm-timer-accept-btn" class="primary-btn">Confirm &amp; Restart</button>
+      </footer>
+    </div>
+  </dialog>
+
+  <script type="module" src="./src/app.js"></script>
+</body>
+</html>
